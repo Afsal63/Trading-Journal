@@ -1,65 +1,106 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import AddEntryForm from "./components/AddEntryForm";
+import JournalEntries from "./components/JournalEntries";
+import EditModal from "./components/EditModal";
+import CapitalOverview from "./components/CapitalOverview";
+import PnLCalendar from "./components/PnLCalendar";
+import StatsSummary from "./components/StatsSummary";
+
+export default function HomePage() {
+  const [entries, setEntries] = useState<any[]>([]);
+  const [editEntry, setEditEntry] = useState<any | null>(null);
+
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [initialCapital, setInitialCapital] = useState(100000);
+
+  // ─── Filter entries based on month/year ──────────────────────
+  const filteredEntries = entries.filter((e) => {
+    const d = new Date(e.date);
+    return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+  });
+
+  // ─── Safe helper for accessing profit/loss value ─────────────
+  const getPnL = (e: any) => e.profitLoss ?? e.pnl ?? 0;
+
+  // ─── Stats Calculation ───────────────────────────────────────
+  const totalTrades = filteredEntries.length;
+  const totalProfit = filteredEntries
+    .filter((e) => getPnL(e) > 0)
+    .reduce((acc, e) => acc + getPnL(e), 0);
+  const totalLoss = filteredEntries
+    .filter((e) => getPnL(e) < 0)
+    .reduce((acc, e) => acc + getPnL(e), 0);
+  const netPnL = totalProfit + totalLoss;
+  const winRate =
+    totalTrades > 0
+      ? (
+          (filteredEntries.filter((e) => getPnL(e) > 0).length / totalTrades) *
+          100
+        ).toFixed(1)
+      : 0;
+
+  // ─── Handlers ────────────────────────────────────────────────
+  const handleAdd = (entry: any) => setEntries([...entries, entry]);
+  const handleDelete = (id: number) =>
+    setEntries(entries.filter((e) => e.id !== id));
+  const handleSaveEdit = (updated: any) => {
+    setEntries(entries.map((e) => (e.id === updated.id ? updated : e)));
+    setEditEntry(null);
+  };
+
+  // ─── Render ─────────────────────────────────────────────────
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
+    <div className="min-h-screen bg-black text-white p-6">
+      <h1 className="text-3xl font-bold mb-8 text-center">
+        💼 Trading Journal Dashboard
+      </h1>
+
+      {/* Stats Summary */}
+      <StatsSummary
+        totalTrades={totalTrades}
+        totalProfit={totalProfit}
+        totalLoss={totalLoss}
+        netPnL={netPnL}
+        winRate={winRate}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+      />
+
+      {/* Capital Overview */}
+      <CapitalOverview
+        entries={filteredEntries}
+        initialCapital={initialCapital}
+        setInitialCapital={setInitialCapital}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
+
+      {/* Other Components */}
+      <AddEntryForm onAdd={handleAdd} />
+      <PnLCalendar
+        entries={filteredEntries}
+        selectedMonth={selectedMonth}
+        setSelectedMonth={setSelectedMonth}
+        selectedYear={selectedYear}
+        setSelectedYear={setSelectedYear}
+      />
+      <JournalEntries
+        entries={filteredEntries}
+        onEdit={setEditEntry}
+        onDelete={handleDelete}
+        selectedMonth={selectedMonth}
+        selectedYear={selectedYear}
+      />
+      <EditModal
+        entry={editEntry}
+        onSave={handleSaveEdit}
+        onClose={() => setEditEntry(null)}
+      />
     </div>
   );
 }
