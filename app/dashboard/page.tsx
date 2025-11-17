@@ -22,11 +22,10 @@ export default function HomePage() {
     const fetchData = async () => {
       try {
         const [tradesData, capitalData] = await Promise.all([
-          get("/trades"), // GET /api/trades
-          get("/capital/initial"), // GET /api/capital/initial
+          get("/trades"),           // GET /api/trades
+          get("/capital/initial"),  // GET /api/capital/initial
         ]);
 
-        // Map backend docs to UI entries
         const mapped = tradesData.map((t: any, index: number) => ({
           ...t,
           id: index + 1,
@@ -100,7 +99,7 @@ export default function HomePage() {
       if (!entry) return;
 
       try {
-        await del(`/trades/${entry.dbId}`);
+        await del(`/trades/${entry.dbId}`); // DELETE /api/trades/:id
         setEntries((prev) => prev.filter((e) => e.id !== id));
       } catch (err) {
         console.error("Error deleting trade:", err);
@@ -118,7 +117,7 @@ export default function HomePage() {
       }
 
       try {
-        const saved = await put(`/trades/${existing.dbId}`, updated);
+        const saved = await put(`/trades/${existing.dbId}`, updated); // PUT /api/trades/:id
 
         const updatedWithDb = {
           ...updated,
@@ -136,12 +135,12 @@ export default function HomePage() {
     })();
   };
 
-  // Update initial capital (now fully synced with backend)
+  // Update initial capital (synced with backend)
   const handleInitialCapitalChange = (val: number) => {
     (async () => {
       try {
         const updated = await put("/capital/initial", { initialCapital: val });
-        setInitialCapital(updated.initialCapital); // Always use backend source of truth
+        setInitialCapital(updated.initialCapital); // backend is source of truth
       } catch (err) {
         console.error("Error updating capital:", err);
       }
@@ -168,7 +167,7 @@ export default function HomePage() {
       />
 
       <CapitalOverview
-        entries={entries}
+        entries={entries} // full list (for month/year toggle)
         initialCapital={initialCapital}
         setInitialCapital={handleInitialCapitalChange}
         selectedMonth={selectedMonth}
