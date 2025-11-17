@@ -14,6 +14,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
     pnl: "",
     notes: "",
     photo: "",
+    tradeResult: "", // TP/SL status
   });
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -22,7 +23,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
 
     const reader = new FileReader();
     reader.onload = (event) => {
-      setForm((f) => ({ ...f, photo: event.target?.result as string }));
+      setForm((prev) => ({ ...prev, photo: event.target?.result as string }));
     };
     reader.readAsDataURL(file);
   };
@@ -34,11 +35,17 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
     onAdd({
       id: Date.now(),
       ...form,
-      date: form.date.toISOString().split("T")[0], // store as yyyy-mm-dd
+      date: form.date.toISOString().split("T")[0],
       pnl: parseFloat(form.pnl),
     });
 
-    setForm({ date: new Date(), pnl: "", notes: "", photo: "" });
+    setForm({
+      date: new Date(),
+      pnl: "",
+      notes: "",
+      photo: "",
+      tradeResult: "",
+    });
   };
 
   return (
@@ -46,18 +53,36 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
       <h2 className="text-xl font-semibold mb-4">➕ Add Trade Journal</h2>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 📅 Date Picker */}
+
+        {/* 📅 Date */}
         <div>
           <label className="text-gray-400 text-sm mb-1 block">Trade Date</label>
           <DatePicker
             selected={form.date}
-            onChange={(date: Date | null) => {
-              if (date) setForm({ ...form, date });
-            }}
+            onChange={(date: Date | null) => date && setForm({ ...form, date })}
             dateFormat="yyyy-MM-dd"
-            className="bg-black border border-gray-700 text-white rounded-lg px-3 py-2 w-full cursor-pointer"
+            className="bg-black border border-gray-700 text-white rounded-lg px-3 py-2 w-full"
             maxDate={new Date()}
           />
+        </div>
+
+        {/* 🎯 TP/SL Result */}
+        <div>
+          <label className="text-gray-400 text-sm mb-1 block">Trade Outcome</label>
+          <select
+            value={form.tradeResult}
+            onChange={(e) => setForm({ ...form, tradeResult: e.target.value })}
+            className="bg-black border border-gray-700 text-white rounded-lg px-3 py-2 w-full"
+            required
+          >
+            <option value="">Select result</option>
+            <option value="tp_hit">TP Hit</option>
+            <option value="sl_hit">SL Hit</option>
+            <option value="partial">Partial</option>
+            <option value="breakeven">Break-even</option>
+            <option value="missed">Missed</option>
+            <option value="manual_exit">Manual Exit</option>
+          </select>
         </div>
 
         {/* 💰 PnL */}
@@ -78,7 +103,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
           className="bg-black border border-gray-700 text-white rounded-lg px-3 py-2 w-full h-20"
         />
 
-        {/* 🖼️ File Upload */}
+        {/* 🖼️ Image */}
         <input
           type="file"
           accept="image/*"
@@ -86,13 +111,14 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
           className="text-gray-400 text-sm"
         />
 
-        {/* ✅ Submit */}
+        {/* 💾 Submit */}
         <button
           type="submit"
           className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg w-full"
         >
           Add Entry
         </button>
+
       </form>
     </div>
   );

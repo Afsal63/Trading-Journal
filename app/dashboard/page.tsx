@@ -15,17 +15,18 @@ export default function HomePage() {
 
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
-  const [initialCapital, setInitialCapital] = useState(100000);
+  const [initialCapital, setInitialCapital] = useState<number>(100000);
 
-  // ─── Load trades + initial capital from backend on mount ─────
+  // ─── Load trades + capital on mount ──────────────────────────
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [tradesData, capitalData] = await Promise.all([
-          get("/trades"),          // GET /api/trades
+          get("/trades"), // GET /api/trades
           get("/capital/initial"), // GET /api/capital/initial
         ]);
 
+        // Map backend docs to UI entries
         const mapped = tradesData.map((t: any, index: number) => ({
           ...t,
           id: index + 1,
@@ -44,14 +45,13 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  // ─── Filter entries based on month/year ──────────────────────
+  // ─── Filter entries by month/year ────────────────────────────
   const filteredEntries = entries.filter((e) => {
     const d = new Date(e.date);
     return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
   });
 
-  // ─── Safe helper for accessing profit/loss value ─────────────
-  const getPnL = (e: any) => e.profitLoss ?? e.pnl ?? 0;
+  const getPnL = (e: any) => e.pnl ?? e.profitLoss ?? 0;
 
   // ─── Stats Calculation ───────────────────────────────────────
   const totalTrades = filteredEntries.length;
@@ -70,13 +70,13 @@ export default function HomePage() {
         ).toFixed(1)
       : 0;
 
-  // helper for numeric UI id
+  // Next UI ID helper
   const getNextId = () =>
     entries.length === 0 ? 1 : Math.max(...entries.map((e) => e.id ?? 0)) + 1;
 
-  // ─── Handlers ────────────────────────────────────────────────
+  // ─── CRUD Handlers ───────────────────────────────────────────
 
-  // Add: POST /api/trades, then update state
+  // Add entry
   const handleAdd = (entry: any) => {
     (async () => {
       try {
@@ -93,14 +93,14 @@ export default function HomePage() {
     })();
   };
 
-  // Delete: use numeric id for UI, dbId for backend
+  // Delete entry
   const handleDelete = (id: number) => {
     (async () => {
       const entry = entries.find((e) => e.id === id);
       if (!entry) return;
 
       try {
-        await del(`/trades/${entry.dbId}`); // DELETE /api/trades/:id
+        await del(`/trades/${entry.dbId}`);
         setEntries((prev) => prev.filter((e) => e.id !== id));
       } catch (err) {
         console.error("Error deleting trade:", err);
@@ -108,7 +108,7 @@ export default function HomePage() {
     })();
   };
 
-  // Edit: PUT /api/trades/:id, then update state
+  // Update entry
   const handleSaveEdit = (updated: any) => {
     (async () => {
       const existing = entries.find((e) => e.id === updated.id);
@@ -118,7 +118,7 @@ export default function HomePage() {
       }
 
       try {
-        const saved = await put(`/trades/${existing.dbId}`, updated); // PUT /api/trades/:id
+        const saved = await put(`/trades/${existing.dbId}`, updated);
 
         const updatedWithDb = {
           ...updated,
@@ -136,27 +136,25 @@ export default function HomePage() {
     })();
   };
 
-  // Capital change handler (called only when you click Save in CapitalOverview)
+  // Update initial capital (now fully synced with backend)
   const handleInitialCapitalChange = (val: number) => {
-    setInitialCapital(val);
-
     (async () => {
       try {
-        await put("/capital/initial", { initialCapital: val });
+        const updated = await put("/capital/initial", { initialCapital: val });
+        setInitialCapital(updated.initialCapital); // Always use backend source of truth
       } catch (err) {
-        console.error("Error updating initial capital:", err);
+        console.error("Error updating capital:", err);
       }
     })();
   };
 
-  // ─── Render ─────────────────────────────────────────────────
+  // ─── Render UI ──────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-black text-white p-6">
       <h1 className="text-3xl font-bold mb-8 text-center">
         💼 Trading Journal Dashboard
       </h1>
 
-      {/* Stats Summary */}
       <StatsSummary
         totalTrades={totalTrades}
         totalProfit={totalProfit}
@@ -169,17 +167,16 @@ export default function HomePage() {
         setSelectedYear={setSelectedYear}
       />
 
-      {/* Capital Overview */}
       <CapitalOverview
-        entries={entries} // full list so monthly/yearly toggle works
+        entries={entries}
         initialCapital={initialCapital}
-        setInitialCapital={handleInitialCapitalChange} // ⬅️ saves when you click Save
+        setInitialCapital={handleInitialCapitalChange}
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
 
-      {/* Other Components */}
       <AddEntryForm onAdd={handleAdd} />
+
       <PnLCalendar
         entries={filteredEntries}
         selectedMonth={selectedMonth}
@@ -187,6 +184,7 @@ export default function HomePage() {
         selectedYear={selectedYear}
         setSelectedYear={setSelectedYear}
       />
+
       <JournalEntries
         entries={filteredEntries}
         onEdit={setEditEntry}
@@ -194,6 +192,7 @@ export default function HomePage() {
         selectedMonth={selectedMonth}
         selectedYear={selectedYear}
       />
+
       <EditModal
         entry={editEntry}
         onSave={handleSaveEdit}
