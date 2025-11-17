@@ -17,6 +17,8 @@ export default function PnLCalendar({
 }: PnLCalendarProps) {
   const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
 
+  console.log(entries, "clndr");
+
   const filteredEntries = entries.filter((e) => {
     const d = new Date(e.date);
     return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
@@ -24,8 +26,18 @@ export default function PnLCalendar({
 
   const dailyPnL: Record<string, number> = {};
   filteredEntries.forEach((e) => {
-    const dateKey = e.date;
-    dailyPnL[dateKey] = (dailyPnL[dateKey] || 0) + Number(e.pnl);
+    const d = new Date(e.date);
+
+    // Normalize date key to YYYY-MM-DD (same format as dateStr below)
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const dateKey = `${y}-${m}-${day}`;
+
+    // Support both pnl and profitLoss
+    const pnlValue = Number(e.pnl ?? e.profitLoss ?? 0);
+
+    dailyPnL[dateKey] = (dailyPnL[dateKey] || 0) + pnlValue;
   });
 
   return (
@@ -67,6 +79,7 @@ export default function PnLCalendar({
             2,
             "0"
           )}-${String(day).padStart(2, "0")}`;
+
           const pnl = dailyPnL[dateStr] || 0;
           const color =
             pnl > 0 ? "bg-green-700" : pnl < 0 ? "bg-red-700" : "bg-gray-800";

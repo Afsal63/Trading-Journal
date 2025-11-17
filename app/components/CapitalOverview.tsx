@@ -6,7 +6,7 @@ import { useState } from "react";
 interface CapitalOverviewProps {
   entries: any[];
   initialCapital: number;
-  setInitialCapital: (val: number) => void;
+  setInitialCapital: (val: number) => void; // this already updates backend in HomePage
   selectedMonth: number;
   selectedYear: number;
 }
@@ -20,19 +20,25 @@ export default function CapitalOverview({
 }: CapitalOverviewProps) {
   const [viewMode, setViewMode] = useState<"month" | "year">("month");
 
-  // Filter trades based on selected mode (month or year)
+  // state for edit mode & temporary input value
+  const [isEditing, setIsEditing] = useState(false);
+  const [tempCapital, setTempCapital] = useState(initialCapital);
+
+  // Filter data
   const filteredEntries =
     viewMode === "month"
       ? entries.filter((e) => {
           const d = new Date(e.date);
-          return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
+          return (
+            d.getMonth() === selectedMonth && d.getFullYear() === selectedYear
+          );
         })
       : entries.filter((e) => {
           const d = new Date(e.date);
           return d.getFullYear() === selectedYear;
         });
 
-  // Calculate total PnL
+  // Calculations
   const totalPnl = filteredEntries.reduce(
     (acc, e) => acc + (e.profitLoss ?? e.pnl ?? 0),
     0
@@ -45,60 +51,95 @@ export default function CapitalOverview({
     : "0.00";
 
   const data = [
-    { name: "Initial Capital", value: initialCapital },
+    { name: "Initial", value: initialCapital },
     { name: growth >= 0 ? "Profit" : "Loss", value: Math.abs(growth) },
   ];
 
-  return (
-    <div className="bg-gray-900 p-6 rounded-2xl mb-8 border border-gray-800">
-      {/* Header */}
-      <div className="flex flex-wrap justify-between items-center mb-6 gap-3">
-        <h2 className="text-xl font-semibold text-white">
-          💹 Capital Growth –{" "}
-          {viewMode === "month"
-            ? new Date(selectedYear, selectedMonth).toLocaleString("en-US", {
-                month: "long",
-                year: "numeric",
-              })
-            : selectedYear}
-        </h2>
+  // Save button handler
+  const handleSave = () => {
+    setInitialCapital(tempCapital); // triggers API from HomePage
+    setIsEditing(false);
+  };
 
-        <div className="flex items-center gap-4">
-          {/* Mode Toggle */}
+  // Cancel button handler
+  const handleCancel = () => {
+    setTempCapital(initialCapital);
+    setIsEditing(false);
+  };
+
+  return (
+    <div className="bg-[#0B0B0D] p-6 rounded-2xl mb-8 border border-[#1A1A1D] shadow-xl">
+      {/* HEADER */}
+      <div className="flex justify-between items-center mb-6 flex-wrap gap-3">
+        <div>
+          <h2 className="text-xl font-bold text-white tracking-wide">
+            💹 Capital Overview
+          </h2>
+          <p className="text-gray-400 text-sm mt-1">
+            {viewMode === "month"
+              ? new Date(selectedYear, selectedMonth).toLocaleString("en-US", {
+                  month: "long",
+                  year: "numeric",
+                })
+              : `Year: ${selectedYear}`}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {/* View Toggle */}
           <select
             value={viewMode}
             onChange={(e) => setViewMode(e.target.value as "month" | "year")}
-            className="bg-black border border-gray-700 rounded-lg px-3 py-2 text-sm text-white"
+            className="bg-[#111] border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:ring-1 focus:ring-green-500"
           >
-            <option value="month">Monthly</option>
-            <option value="year">Yearly</option>
+            <option value="month">📅 Monthly</option>
+            <option value="year">🗓️ Yearly</option>
           </select>
 
-          {/* Capital Input */}
-          <div className="flex items-center gap-2">
-            <label className="text-gray-400 text-sm">Initial ₹</label>
-            <input
-              type="number"
-              value={initialCapital}
-              onChange={(e) =>
-                setInitialCapital(parseFloat(e.target.value) || 0)
-              }
-              className="bg-black border border-gray-700 rounded-lg px-3 py-2 w-28 text-sm text-white"
-              placeholder="Capital"
-            />
-          </div>
+          {/* Capital Display / Edit */}
+          {!isEditing ? (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-xl text-sm"
+            >
+              Edit Capital
+            </button>
+          ) : (
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                value={tempCapital}
+                onChange={(e) =>
+                  setTempCapital(parseFloat(e.target.value) || 0)
+                }
+                className="bg-black border border-gray-700 rounded-xl px-3 py-2 w-28 text-sm text-white focus:ring-1 focus:ring-green-500"
+              />
+              <button
+                onClick={handleSave}
+                className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-xl text-sm"
+              >
+                Save
+              </button>
+              <button
+                onClick={handleCancel}
+                className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-2 rounded-xl text-sm"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Body */}
+      {/* BODY */}
       {filteredEntries.length === 0 ? (
-        <p className="text-gray-500 text-center">
-          No trades for this {viewMode === "month" ? "month" : "year"}.
+        <p className="text-gray-500 text-center py-10 text-sm">
+          No trades found for this {viewMode}.
         </p>
       ) : (
-        <div className="flex flex-col md:flex-row items-center justify-between">
-          {/* Pie Chart */}
-          <div className="w-full md:w-1/2 h-64">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+          {/* PIE CHART */}
+          <div className="w-full md:w-1/2 h-60">
             <ResponsiveContainer>
               <PieChart>
                 <Pie
@@ -107,19 +148,21 @@ export default function CapitalOverview({
                   nameKey="name"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  innerRadius={60}
+                  outerRadius={110}
+                  innerRadius={70}
                   label={({ name, percent }) =>
                     `${name}: ${((percent ?? 0) * 100).toFixed(1)}%`
                   }
                 >
-                  <Cell fill="#00FF88" />
-                  <Cell fill={growth >= 0 ? "#00FF88" : "#FF5555"} />
+                  <Cell fill="#4ADE80" />
+                  <Cell fill={growth >= 0 ? "#4ADE80" : "#F87171"} />
                 </Pie>
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "#111",
-                    border: "none",
+                    borderRadius: "10px",
+                    padding: "8px 12px",
+                    border: "1px solid #333",
                     color: "#fff",
                   }}
                   formatter={(value, name) => [
@@ -131,25 +174,35 @@ export default function CapitalOverview({
             </ResponsiveContainer>
           </div>
 
-          {/* Capital Details */}
-          <div className="mt-6 md:mt-0 md:w-1/2 text-center md:text-left">
-            <h3 className="text-lg text-gray-300 mb-2">
-              Initial Capital:{" "}
-              <span className="text-white font-semibold">
+          {/* DETAILS */}
+          <div className="md:w-1/2 space-y-3 text-center md:text-left">
+            <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
+              <p className="text-gray-400 text-sm">Initial Capital</p>
+              <h3 className="text-lg text-white font-bold">
                 ₹{initialCapital.toLocaleString("en-IN")}
-              </span>
-            </h3>
-            <h3
-              className={`text-lg font-semibold ${
-                growth >= 0 ? "text-green-400" : "text-red-400"
+              </h3>
+            </div>
+
+            <div
+              className={`p-4 rounded-xl border ${
+                growth >= 0
+                  ? "bg-[#052E16] border-green-800"
+                  : "bg-[#2C0A0A] border-red-800"
               }`}
             >
-              Current Capital: ₹{currentCapital.toLocaleString("en-IN")}{" "}
-              <span className="text-sm text-gray-400">
-                ({growth >= 0 ? "+" : ""}
-                {growthPercent}%)
-              </span>
-            </h3>
+              <p className="text-gray-400 text-sm">Current Capital</p>
+              <h3
+                className={`text-lg font-bold ${
+                  growth >= 0 ? "text-green-400" : "text-red-400"
+                }`}
+              >
+                ₹{currentCapital.toLocaleString("en-IN")}{" "}
+                <span className="text-sm text-gray-400">
+                  ({growth >= 0 ? "+" : ""}
+                  {growthPercent}%)
+                </span>
+              </h3>
+            </div>
           </div>
         </div>
       )}

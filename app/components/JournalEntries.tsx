@@ -16,18 +16,25 @@ export default function JournalEntries({
   selectedYear,
 }: JournalEntriesProps) {
   // Filter entries based on selected month & year
-  const filteredEntries = entries.filter((entry) => {
+  const filteredEntries = entries?.filter((entry) => {
     const date = new Date(entry.date);
     return (
       date.getMonth() === selectedMonth && date.getFullYear() === selectedYear
     );
   });
 
+  const confirmDelete = (id: number) => {
+    const ok = window.confirm("Are you sure you want to delete this entry?");
+    if (ok) {
+      onDelete(id);
+    }
+  };
+
   return (
     <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800">
       <h2 className="text-xl font-semibold mb-4">
         📜 Trade Journal Records —{" "}
-        {new Date(selectedYear, selectedMonth).toLocaleString("default", {
+        {new Date(selectedYear, selectedMonth)?.toLocaleString("default", {
           month: "long",
           year: "numeric",
         })}
@@ -61,7 +68,7 @@ export default function JournalEntries({
                     entry.pnl > 0 ? "text-green-400" : "text-red-400"
                   }`}
                 >
-                  ₹{entry.pnl.toLocaleString()}
+                  ₹{entry?.pnl?.toLocaleString()}
                 </p>
                 {entry.notes && (
                   <p className="text-gray-300 text-sm line-clamp-2">
@@ -78,7 +85,7 @@ export default function JournalEntries({
                     Edit
                   </button>
                   <button
-                    onClick={() => onDelete(entry.id)}
+                    onClick={() => confirmDelete(entry.id)}
                     className="px-3 py-1 bg-red-600 hover:bg-red-700 rounded-md text-sm"
                   >
                     Delete
