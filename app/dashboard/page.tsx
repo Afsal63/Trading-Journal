@@ -17,13 +17,13 @@ export default function HomePage() {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [initialCapital, setInitialCapital] = useState<number>(100000);
 
-  // ─── Load trades + capital on mount ──────────────────────────
+  // Load trades + capital
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [tradesData, capitalData] = await Promise.all([
-          get("/trades"),           // GET /api/trades
-          get("/capital/initial"),  // GET /api/capital/initial
+          get("/trades"),
+          get("/capital/initial"),
         ]);
 
         const mapped = tradesData.map((t: any, index: number) => ({
@@ -44,7 +44,7 @@ export default function HomePage() {
     fetchData();
   }, []);
 
-  // ─── Filter entries by month/year ────────────────────────────
+  // Filter entries by month & year
   const filteredEntries = entries.filter((e) => {
     const d = new Date(e.date);
     return d.getMonth() === selectedMonth && d.getFullYear() === selectedYear;
@@ -52,7 +52,7 @@ export default function HomePage() {
 
   const getPnL = (e: any) => e.pnl ?? e.profitLoss ?? 0;
 
-  // ─── Stats Calculation ───────────────────────────────────────
+  // Stats
   const totalTrades = filteredEntries.length;
   const totalProfit = filteredEntries
     .filter((e) => getPnL(e) > 0)
@@ -63,29 +63,21 @@ export default function HomePage() {
   const netPnL = totalProfit + totalLoss;
   const winRate =
     totalTrades > 0
-      ? (
-          (filteredEntries.filter((e) => getPnL(e) > 0).length / totalTrades) *
-          100
-        ).toFixed(1)
+      ? ((filteredEntries.filter((e) => getPnL(e) > 0).length / totalTrades) * 100).toFixed(1)
       : 0;
 
-  // Next UI ID helper
   const getNextId = () =>
     entries.length === 0 ? 1 : Math.max(...entries.map((e) => e.id ?? 0)) + 1;
-
-  // ─── CRUD Handlers ───────────────────────────────────────────
 
   // Add entry
   const handleAdd = (entry: any) => {
     (async () => {
       try {
-        const saved = await post("/trades", entry); // POST /api/trades
-        const newEntry = {
-          ...entry,
-          id: getNextId(),
-          dbId: saved._id,
-        };
-        setEntries((prev) => [...prev, newEntry]);
+        const saved = await post("/trades", entry);
+        setEntries((prev) => [
+          ...prev,
+          { ...entry, id: getNextId(), dbId: saved._id },
+        ]);
       } catch (err) {
         console.error("Error adding trade:", err);
       }
@@ -97,9 +89,8 @@ export default function HomePage() {
     (async () => {
       const entry = entries.find((e) => e.id === id);
       if (!entry) return;
-
       try {
-        await del(`/trades/${entry.dbId}`); // DELETE /api/trades/:id
+        await del(`/trades/${entry.dbId}`);
         setEntries((prev) => prev.filter((e) => e.id !== id));
       } catch (err) {
         console.error("Error deleting trade:", err);
@@ -111,22 +102,12 @@ export default function HomePage() {
   const handleSaveEdit = (updated: any) => {
     (async () => {
       const existing = entries.find((e) => e.id === updated.id);
-      if (!existing) {
-        setEditEntry(null);
-        return;
-      }
+      if (!existing) return setEditEntry(null);
 
       try {
-        const saved = await put(`/trades/${existing.dbId}`, updated); // PUT /api/trades/:id
-
-        const updatedWithDb = {
-          ...updated,
-          dbId: existing.dbId,
-          _id: saved._id ?? existing.dbId,
-        };
-
+        const saved = await put(`/trades/${existing.dbId}`, updated);
         setEntries((prev) =>
-          prev.map((e) => (e.id === updated.id ? updatedWithDb : e))
+          prev.map((e) => (e.id === updated.id ? { ...updated, dbId: existing.dbId } : e))
         );
         setEditEntry(null);
       } catch (err) {
@@ -135,25 +116,42 @@ export default function HomePage() {
     })();
   };
 
-  // Update initial capital (synced with backend)
+  // Update capital
   const handleInitialCapitalChange = (val: number) => {
     (async () => {
       try {
         const updated = await put("/capital/initial", { initialCapital: val });
-        setInitialCapital(updated.initialCapital); // backend is source of truth
+        setInitialCapital(updated.initialCapital);
       } catch (err) {
         console.error("Error updating capital:", err);
       }
     })();
   };
 
-  // ─── Render UI ──────────────────────────────────────────────
+  // 🚀 Logout (remove cookie + redirect)
+  const handleLogout = () => {
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    window.location.href = "/login";
+  };
+
   return (
     <div className="min-h-screen bg-black text-white p-6">
+
+      {/* Logout Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={handleLogout}
+          className="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg text-sm font-semibold"
+        >
+          Logout
+        </button>
+      </div>
+
       <h1 className="text-3xl font-bold mb-8 text-center">
         💼 Trading Journal Dashboard
       </h1>
 
+      {/* Components */}
       <StatsSummary
         totalTrades={totalTrades}
         totalProfit={totalProfit}
@@ -167,7 +165,7 @@ export default function HomePage() {
       />
 
       <CapitalOverview
-        entries={entries} // full list (for month/year toggle)
+        entries={entries}
         initialCapital={initialCapital}
         setInitialCapital={handleInitialCapitalChange}
         selectedMonth={selectedMonth}
