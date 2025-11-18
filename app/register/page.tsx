@@ -9,6 +9,7 @@ export default function RegisterPage() {
   const [msg, setMsg] = useState("");
 
   const handleRegister = async (e: any) => {
+
     e.preventDefault();
     setMsg("");
 
@@ -48,11 +49,11 @@ export default function RegisterPage() {
             required
           />
 
-          <button
+          {/* <button
             className="mt-2 w-full p-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all duration-200 shadow-[0_4px_15px_rgba(0,0,255,0.3)]"
           >
             Register
-          </button>
+          </button> */}
         </form>
 
         {msg && (
