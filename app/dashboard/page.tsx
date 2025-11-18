@@ -154,14 +154,15 @@ export default function HomePage() {
 
 const handleLogout = async () => {
   try {
-   await logout();
-router.push("/login");  
+    await logout();
+    router.push("/login");  
   } catch (err) {
     console.error("Logout failed:", err);
   } finally {
     router.replace("/login");  // 🔥 replace() avoids back button restoring session
   }
 };
+
 
   // ─── Render UI ──────────────────────────────────────────────
   return (
