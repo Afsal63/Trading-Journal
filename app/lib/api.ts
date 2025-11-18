@@ -1,89 +1,69 @@
-// =======================
-// API CONFIGURATION
-// =======================
-let API_URL = process.env.NEXT_PUBLIC_API_URL;
+// =============================
+// API CLIENT (Cookie Auth Safe)
+// =============================
 
-// Normalize: remove trailing slash if present
-if (API_URL?.endsWith("/")) {
+let API_URL = process.env.NEXT_PUBLIC_API_URL!;
+
+// Normalize API base URL
+if (API_URL.endsWith("/")) {
   API_URL = API_URL.slice(0, -1);
 }
 
-// Hard fail if no API_URL
-if (!API_URL) {
-  throw new Error(
-    "❌ Missing NEXT_PUBLIC_API_URL — create .env.local and restart the dev server.\nExample:\nNEXT_PUBLIC_API_URL=http://localhost:5001"
-  );
-}
-
-// Shared response handler
-async function handleResponse(res: Response) {
-  let json: any = {};
-  try {
-    json = await res.json();
-  } catch {
-    // If not JSON, fallback generic error
-    if (!res.ok) throw new Error("❌ Server returned invalid response.");
-    return {};
-  }
-
-  if (!res.ok) {
-    throw new Error(json.msg || json.error || "❌ Request failed");
-  }
-
-  return json;
-}
-
-// Helper to create full URL
+// Helper to build URLs consistently
 function buildUrl(path: string) {
   return `${API_URL}/api${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-// =======================
-// HTTP HELPERS
-// =======================
+// Shared response handler
+async function handleResponse(res: Response) {
+  const data = await res.json().catch(() => ({}));
 
-// POST
-export async function post(path: string, data: any) {
-  const url = buildUrl(path);
-  console.log("📡 POST →", url);
+  if (!res.ok) {
+    const err: any = new Error(data.msg || data.error || "Request failed");
+    err.status = res.status;
+    throw err;
+  }
 
-  const res = await fetch(url, {
-    method: "POST",
-    credentials: "include", // ⬅ required for cookie auth
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(data),
+  return data;
+}
+
+// =============================
+// HTTP Methods
+// =============================
+
+// GET
+export async function get(path: string) {
+  const res = await fetch(buildUrl(path), {
+    method: "GET",
+    credentials: "include", // send cookies
   });
 
   return handleResponse(res);
 }
 
-// GET
-export async function get(path: string) {
-  const url = buildUrl(path);
-  console.log("📡 GET →", url);
-
-  const res = await fetch(url, {
-    method: "GET",
+// POST
+export async function post(path: string, body: any) {
+  const res = await fetch(buildUrl(path), {
+    method: "POST",
     credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
   });
 
   return handleResponse(res);
 }
 
 // PUT
-export async function put(path: string, data: any) {
-  const url = buildUrl(path);
-  console.log("📡 PUT →", url);
-
-  const res = await fetch(url, {
+export async function put(path: string, body: any) {
+  const res = await fetch(buildUrl(path), {
     method: "PUT",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(data),
+    body: JSON.stringify(body),
   });
 
   return handleResponse(res);
@@ -91,10 +71,7 @@ export async function put(path: string, data: any) {
 
 // DELETE
 export async function del(path: string) {
-  const url = buildUrl(path);
-  console.log("📡 DELETE →", url);
-
-  const res = await fetch(url, {
+  const res = await fetch(buildUrl(path), {
     method: "DELETE",
     credentials: "include",
   });
@@ -102,7 +79,7 @@ export async function del(path: string) {
   return handleResponse(res);
 }
 
-// ✅ LOGOUT helper (calls backend to clear cookie)
+// LOGOUT (server clears cookie)
 export async function logout() {
   return post("/auth/logout", {});
 }

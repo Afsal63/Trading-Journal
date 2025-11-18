@@ -152,16 +152,18 @@ export default function HomePage() {
   // 🔐 Logout via backend (clears cookie on Render domain)
  // inside HomePage component
 
+// inside HomePage component
 const handleLogout = async () => {
   try {
-    await logout();
-    router.push("/login");  
+    await logout();         // backend clears cookie
   } catch (err) {
     console.error("Logout failed:", err);
   } finally {
-    router.replace("/login");  // 🔥 replace() avoids back button restoring session
+    // make sure user leaves dashboard no matter what
+    router.replace("/login");
   }
 };
+
 
 
   // ─── Render UI ──────────────────────────────────────────────
