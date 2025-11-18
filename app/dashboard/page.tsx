@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import AddEntryForm from "../components/AddEntryForm";
 import JournalEntries from "../components/JournalEntries";
 import EditModal from "../components/EditModal";
@@ -16,6 +17,8 @@ export default function HomePage() {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [initialCapital, setInitialCapital] = useState<number>(100000);
+
+  const router = useRouter();
 
   // ─── Load trades + capital on mount ──────────────────────────
   useEffect(() => {
@@ -36,13 +39,18 @@ export default function HomePage() {
         if (capitalData?.initialCapital !== undefined) {
           setInitialCapital(capitalData.initialCapital);
         }
-      } catch (err) {
+      } catch (err: any) {
         console.error("Failed to load data:", err);
+
+        // ⬅️ If not authenticated (cookie cleared), send to login
+        if (err?.status === 401) {
+          router.push("/login");
+        }
       }
     };
 
     fetchData();
-  }, []);
+  }, [router]);
 
   // ─── Filter entries by month/year ────────────────────────────
   const filteredEntries = entries.filter((e) => {
@@ -142,17 +150,18 @@ export default function HomePage() {
   };
 
   // 🔐 Logout via backend (clears cookie on Render domain)
-  const handleLogout = () => {
-    (async () => {
-      try {
-        await logout(); // POST /api/auth/logout
-      } catch (err) {
-        console.error("Error logging out:", err);
-      } finally {
-        window.location.href = "/login";
-      }
-    })();
-  };
+ // inside HomePage component
+
+const handleLogout = async () => {
+  try {
+   await logout();
+router.push("/login");  
+  } catch (err) {
+    console.error("Logout failed:", err);
+  } finally {
+    router.replace("/login");  // 🔥 replace() avoids back button restoring session
+  }
+};
 
   // ─── Render UI ──────────────────────────────────────────────
   return (
