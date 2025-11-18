@@ -76,14 +76,14 @@ const StatsSummary: React.FC<StatsSummaryProps> = ({
         <div className="bg-black p-4 rounded-xl text-center">
           <h3 className="text-sm text-gray-400">Total Profit</h3>
           <p className="text-2xl font-bold text-green-400">
-            ₹{totalProfit.toLocaleString("en-IN")}
+            ${totalProfit.toLocaleString("en-IN")}
           </p>
         </div>
 
         <div className="bg-black p-4 rounded-xl text-center">
           <h3 className="text-sm text-gray-400">Total Loss</h3>
           <p className="text-2xl font-bold text-red-400">
-            ₹{Math.abs(totalLoss).toLocaleString("en-IN")}
+            ${Math.abs(totalLoss).toLocaleString("en-IN")}
           </p>
         </div>
 
@@ -94,7 +94,7 @@ const StatsSummary: React.FC<StatsSummaryProps> = ({
               netPnL >= 0 ? "text-green-400" : "text-red-400"
             }`}
           >
-            ₹{netPnL.toLocaleString("en-IN")}
+            ${netPnL.toLocaleString("en-IN")}
           </p>
           <p className="text-sm text-gray-400">{winRate}% Win Rate</p>
         </div>

@@ -115,7 +115,7 @@ export default function EditModal({ entry, onSave, onClose }: EditModalProps) {
         </select>
 
         {/* 💰 PnL */}
-        <label className="text-gray-400 text-sm mb-1 block">PnL (₹)</label>
+        <label className="text-gray-400 text-sm mb-1 block">PnL ($)</label>
         <input
           type="number"
           value={updatedEntry.pnl}

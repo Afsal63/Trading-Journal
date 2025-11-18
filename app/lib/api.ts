@@ -101,3 +101,8 @@ export async function del(path: string) {
 
   return handleResponse(res);
 }
+
+// ✅ LOGOUT helper (calls backend to clear cookie)
+export async function logout() {
+  return post("/auth/logout", {});
+}

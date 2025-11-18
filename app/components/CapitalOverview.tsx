@@ -172,7 +172,7 @@ export default function CapitalOverview({
                     color: "#fff",
                   }}
                   formatter={(value, name) => [
-                    `₹${Number(value).toLocaleString()}`,
+                    `$${Number(value).toLocaleString()}`,
                     name,
                   ]}
                 />
@@ -185,7 +185,7 @@ export default function CapitalOverview({
             <div className="bg-[#111] p-4 rounded-xl border border-[#222]">
               <p className="text-gray-400 text-sm">Initial Capital</p>
               <h3 className="text-lg text-white font-bold">
-                ₹{initialCapital.toLocaleString("en-IN")}
+                ${initialCapital.toLocaleString("en-IN")}
               </h3>
             </div>
 
@@ -202,7 +202,7 @@ export default function CapitalOverview({
                   growth >= 0 ? "text-green-400" : "text-red-400"
                 }`}
               >
-                ₹{currentCapital.toLocaleString("en-IN")}{" "}
+                ${currentCapital.toLocaleString("en-IN")}{" "}
                 <span className="text-sm text-gray-400">
                   ({growth >= 0 ? "+" : ""}
                   {growthPercent}%)

@@ -113,7 +113,7 @@ export default function JournalEntries({
                     entry.pnl > 0 ? "text-green-400" : "text-red-400"
                   }`}
                 >
-                  ₹{entry?.pnl?.toLocaleString()}
+                  ${entry?.pnl?.toLocaleString()}
                 </p>
 
                 {/* Notes */}

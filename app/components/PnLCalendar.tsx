@@ -88,7 +88,7 @@ export default function PnLCalendar({
             <div
               key={day}
               className={`${color} p-2 rounded-md hover:scale-105 transition cursor-pointer`}
-              title={`PnL: ₹${pnl.toFixed(2)}`}
+              title={`PnL: $${pnl.toFixed(2)}`}
             >
               <p className="text-gray-300 text-xs">{day}</p>
               {pnl !== 0 && (

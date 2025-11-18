@@ -88,7 +88,7 @@ export default function AddEntryForm({ onAdd }: AddEntryFormProps) {
         {/* 💰 PnL */}
         <input
           type="number"
-          placeholder="PnL (₹)"
+          placeholder="PnL ($)"
           value={form.pnl}
           onChange={(e) => setForm({ ...form, pnl: e.target.value })}
           className="bg-black border border-gray-700 text-white rounded-lg px-3 py-2 w-full"
