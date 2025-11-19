@@ -15,10 +15,21 @@ function buildUrl(path: string) {
 }
 
 // Shared response handler
+// Shared response handler
 async function handleResponse(res: Response) {
   const data = await res.json().catch(() => ({}));
 
   if (!res.ok) {
+    // If token invalid / expired → delete cookie
+    if (res.status === 401) {
+      if (typeof window !== "undefined") {
+        // Delete browser cookie
+        document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+      }
+      // Redirect to login
+      window.location.href = "/login";
+    }
+
     const err: any = new Error(data.msg || data.error || "Request failed");
     err.status = res.status;
     throw err;
