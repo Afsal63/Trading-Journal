@@ -92,5 +92,24 @@ export async function del(path: string) {
 
 // LOGOUT (server clears cookie)
 export async function logout() {
-  return post("/auth/logout", {});
+  try {
+    // Call backend logout API
+    await post("/auth/logout", {});
+
+    // Remove cookie from browser (fallback)
+    if (typeof window !== "undefined") {
+      document.cookie =
+        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    }
+
+    // Redirect to login
+    window.location.href = "/login";
+  } catch (err) {
+    // Even if backend fails, still clear cookie locally
+    if (typeof window !== "undefined") {
+      document.cookie =
+        "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    }
+    window.location.href = "/login";
+  }
 }
